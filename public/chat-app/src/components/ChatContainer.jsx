@@ -4,30 +4,56 @@ import ChatInput from "./ChatInput";
 import Logout from "./Logout";
 import axios from "axios";
 import { getAllMessageRoute, sendMessageRoute } from "../utils/apiRouter";
+import { v4 as uuidv4 } from "uuid";
 
-export default function ChatContainer({ currentChat, currentUser }) {
+export default function ChatContainer({ currentChat, currentUser, socket }) {
   const [message, setMessage] = useState([]);
   const scrollRef = useRef();
-
+  const [arrivalMessage, setArrivalMessage] = useState(null);
   const handleSendMsg = async (msg) => {
     await axios.post(sendMessageRoute, {
-      from: currentUser._id,
-      to: currentChat._id,
+      from: currentUser?._id,
+      to: currentChat?._id,
       message: msg,
     });
+    socket.current.emit("send-msg", {
+      to: currentChat._id,
+      from: currentUser._id,
+      message: msg,
+    });
+    const msgs = [...message];
+    msgs.push({ fromSelf: true, message: msg });
+    setMessage(msgs);
   };
 
   useEffect(() => {
     async function fetchData() {
-      const { data } = await axios.post(getAllMessageRoute, {
-        from: currentUser._id,
-        to: currentChat._id,
-      });
-      setMessage(data);
+      if (currentChat) {
+        const { data } = await axios.post(getAllMessageRoute, {
+          from: currentUser?._id,
+          to: currentChat?._id,
+        });
+        setMessage(data);
+      }
     }
     fetchData();
   }, [currentChat]);
 
+  useEffect(() => {
+    if (socket.current) {
+      socket.current.on("msg-recieve", (msg) => {
+        setArrivalMessage({ fromSelf: false, message: msg });
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    arrivalMessage && setMessage((prev) => [...prev, arrivalMessage]);
+  }, [arrivalMessage]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behaviour: "smooth" });
+  }, [message]);
   return (
     <>
       {currentChat && (
@@ -36,22 +62,28 @@ export default function ChatContainer({ currentChat, currentUser }) {
             <div className="user-details">
               <div className="avatar">
                 <img
-                  src={`data:image/svg+xml;base64,${currentChat.avatarImage}`}
+                  src={`data:image/svg+xml;base64,${currentChat?.avatarImage}`}
                   alt="avatar"
                 />
               </div>
               <div className="username">
-                <h3>{currentChat.username}</h3>
+                <h3>{currentChat?.username}</h3>
               </div>
             </div>
             <Logout />
           </div>
-          <div className="chat-message">
+          <div className="chat-messages">
             {message.map((message) => {
               return (
-                <div ref={scrollRef} key={message._id}>
-                  <div>
-                    <div></div>
+                <div ref={scrollRef} key={uuidv4()}>
+                  <div
+                    className={`message ${
+                      message.fromSelf ? "sended" : "recieved"
+                    }`}
+                  >
+                    <div className="content ">
+                      <p>{message.message}</p>
+                    </div>
                   </div>
                 </div>
               );

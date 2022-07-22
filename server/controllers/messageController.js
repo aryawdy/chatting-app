@@ -27,6 +27,7 @@ module.exports.getAllMessage = async (req, res, next) => {
         message: el.message,
       };
     });
+
     res.json(projectMessages);
   } catch (err) {
     next(err);
