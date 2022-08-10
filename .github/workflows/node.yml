@@ -13,5 +13,5 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '16'
-      - run: npm install
+      - run: npm install --prefix server && npm install --prefix public 
       - run: npm run build --prefix public
