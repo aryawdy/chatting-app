@@ -1,9 +1,9 @@
 name: Chatting App CI
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -12,6 +12,5 @@ jobs:
       - name: Use Node.js version 16
         uses: actions/setup-node@v2
         with:
-          node-version: '16'
-      - run: npm install --prefix server && npm install --prefix public --prefix chat-app
-      - run: npm run build --prefix public
+          node-version: "16"
+      - run: npm install --prefix server && npm install --prefix public/chat-app
